@@ -21,7 +21,10 @@ namespace BLTAdoptAHero
             Shield
         }
 
-        private static HashSet<string> restrictedItemIds = BLTAdoptAHeroModule.CommonConfig.RestrictedItemIds;
+        // Read this from the live config instead of caching it. This allows changes made
+        // after RewardHelpers is initialized to take effect without restarting the game.
+        private static bool IsRestricted(ItemObject item)
+            => item != null && BLTAdoptAHeroModule.CommonConfig.RestrictedItemIds.Contains(item.StringId ?? "");
 
         public static (ItemObject item, ItemModifier modifier, EquipmentIndex slot) GenerateRewardType(
             RewardType rewardType, int tier, Hero hero, HeroClassDef heroClass,
@@ -449,7 +452,7 @@ namespace BLTAdoptAHero
                         item: EquipHero.FindRandomTieredEquipment(tier, hero,
                             heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                             EquipHero.FindFlags.IgnoreAbility | EquipHero.FindFlags.RequireExactTier,
-                            i => i.IsEquipmentType(c.type) && !restrictedItemIds.Contains(i.StringId ?? ""), culture),
+                            i => i.IsEquipmentType(c.type) && !IsRestricted(i), culture),
                         index: c.index))
                     .FirstOrDefault(w => w.item != null);
                 return item == null || hero.BattleEquipment[index].Item?.Tier >= item.Tier
@@ -489,13 +492,14 @@ namespace BLTAdoptAHero
                     heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                     EquipHero.FindFlags.IgnoreAbility,
                     o => o.ItemType == itemType
+                         && !IsRestricted(o)
                          && (culture == null || o.Culture == culture));
 
                 // Fallback: relax culture filter if nothing found
                 armor ??= EquipHero.FindRandomTieredEquipment(5, hero,
                     heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                     EquipHero.FindFlags.IgnoreAbility,
-                    o => o.ItemType == itemType);
+                    o => o.ItemType == itemType && !IsRestricted(o));
 
                 return armor == null
                     ? default
@@ -507,6 +511,7 @@ namespace BLTAdoptAHero
                     heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                     EquipHero.FindFlags.IgnoreAbility | EquipHero.FindFlags.RequireExactTier,
                     o => o.ItemType == itemType
+                         && !IsRestricted(o)
                          && (culture == null || o.Culture == culture));
 
                 return armor == null || hero.BattleEquipment.YieldFilledArmorSlots()
@@ -559,6 +564,7 @@ namespace BLTAdoptAHero
                     // If we are making a custom mount then use any mount over Tier 2, otherwise match the tier exactly 
                     && (tier > 5 && (int)item.Tier >= 2 || (int)item.Tier == tier)
                     && IsCorrectMountFamily(item)
+                    && !IsRestricted(item)
                 );
 
             // Filter by culture if specified
@@ -642,7 +648,7 @@ namespace BLTAdoptAHero
                         item: EquipHero.FindRandomTieredEquipment(tier, hero,
                             heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                             EquipHero.FindFlags.IgnoreAbility | EquipHero.FindFlags.RequireExactTier,
-                            i => i.IsEquipmentType(c.type), culture),
+                            i => i.IsEquipmentType(c.type) && !IsRestricted(i), culture),
                         index: c.index))
                     .FirstOrDefault(w => w.item != null);
                 return item == null || hero.BattleEquipment[index].Item?.Tier >= item.Tier
@@ -721,7 +727,7 @@ namespace BLTAdoptAHero
                         item: EquipHero.FindRandomTieredEquipment(tier, hero,
                             heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                             EquipHero.FindFlags.IgnoreAbility | EquipHero.FindFlags.RequireExactTier,
-                            i => i.IsEquipmentType(c.type)),
+                            i => i.IsEquipmentType(c.type) && !IsRestricted(i)),
                         index: c.index))
                     .FirstOrDefault(w => w.item != null);
                 return item == null || hero.BattleEquipment[index].Item?.Tier >= item.Tier
@@ -759,7 +765,7 @@ namespace BLTAdoptAHero
                 var armor = EquipHero.FindRandomTieredEquipment(5, hero,
                     heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                     EquipHero.FindFlags.IgnoreAbility,
-                    o => o.ItemType == itemType);
+                    o => o.ItemType == itemType && !IsRestricted(o));
                 return armor == null ? default : (armor, modifierDef.Generate(armor, customItemName, customItemPower), index);
             }
             else
@@ -767,7 +773,7 @@ namespace BLTAdoptAHero
                 var armor = EquipHero.FindRandomTieredEquipment(tier, hero,
                     heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                     EquipHero.FindFlags.IgnoreAbility | EquipHero.FindFlags.RequireExactTier,
-                    o => o.ItemType == itemType);
+                    o => o.ItemType == itemType && !IsRestricted(o));
                 // if no armor was found, or its the same tier as what we have then return null
                 return armor == null || hero.BattleEquipment.YieldFilledArmorSlots()
                     .Any(i2 => i2.Item.Type == armor.Type && i2.Item.Tier >= armor.Tier)
@@ -819,6 +825,7 @@ namespace BLTAdoptAHero
                     // If we are making a custom mount then use any mount over Tier 2, otherwise match the tier exactly 
                     && (tier > 5 && (int)item.Tier >= 2 || (int)item.Tier == tier)
                     && IsCorrectMountFamily(item)
+                    && !IsRestricted(item)
                 )
                 .SelectRandom();
 
@@ -895,7 +902,7 @@ namespace BLTAdoptAHero
                         item: EquipHero.FindRandomTieredEquipment(tier, hero,
                             heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                             EquipHero.FindFlags.IgnoreAbility | EquipHero.FindFlags.RequireExactTier,
-                            i => i.IsEquipmentType(c.type)),
+                            i => i.IsEquipmentType(c.type) && !IsRestricted(i)),
                         index: c.index))
                     .FirstOrDefault(w => w.item != null);
                 return item == null || hero.BattleEquipment[index].Item?.Tier >= item.Tier
@@ -910,14 +917,14 @@ namespace BLTAdoptAHero
             var item = EquipHero.FindRandomTieredEquipment(6, hero,
                 heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                 EquipHero.FindFlags.IgnoreAbility,
-                o => o.IsEquipmentType(EquipmentType.Shield) && !restrictedItemIds.Contains(o.StringId ?? ""));
+                o => o.IsEquipmentType(EquipmentType.Shield) && !IsRestricted(o));
 
             if (item == null)
             {
                 item = EquipHero.FindRandomTieredEquipment(5, hero,
                 heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                 EquipHero.FindFlags.IgnoreAbility,
-                o => o.IsEquipmentType(EquipmentType.Shield) && !restrictedItemIds.Contains(o.StringId ?? ""));
+                o => o.IsEquipmentType(EquipmentType.Shield) && !IsRestricted(o));
             }
             return item;
         }
@@ -930,7 +937,7 @@ namespace BLTAdoptAHero
                 var item = EquipHero.FindRandomTieredEquipment(5, hero,
                     heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                     EquipHero.FindFlags.IgnoreAbility,
-                    o => o.IsEquipmentType(weaponType) && !restrictedItemIds.Contains(o.StringId ?? ""));
+                    o => o.IsEquipmentType(weaponType) && !IsRestricted(o));
                 return item;
             }
             else
@@ -945,14 +952,14 @@ namespace BLTAdoptAHero
             var item = EquipHero.FindRandomTieredEquipment(6, hero,
                 heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                 EquipHero.FindFlags.IgnoreAbility,
-                o => o.IsEquipmentType(EquipmentType.Shield) && !restrictedItemIds.Contains(o.StringId ?? ""), culture);
+                o => o.IsEquipmentType(EquipmentType.Shield) && !IsRestricted(o), culture);
 
             if (item == null)
             {
                 item = EquipHero.FindRandomTieredEquipment(5, hero,
                 heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                 EquipHero.FindFlags.IgnoreAbility,
-                o => o.IsEquipmentType(EquipmentType.Shield) && !restrictedItemIds.Contains(o.StringId ?? ""), culture);
+                o => o.IsEquipmentType(EquipmentType.Shield) && !IsRestricted(o), culture);
             }
             return item;
         }
@@ -965,7 +972,7 @@ namespace BLTAdoptAHero
                 var item = EquipHero.FindRandomTieredEquipment(5, hero,
                     heroClass?.Mounted == true || !hero.BattleEquipment.Horse.IsEmpty,
                     EquipHero.FindFlags.IgnoreAbility,
-                    o => o.IsEquipmentType(weaponType) && !restrictedItemIds.Contains(o.StringId ?? ""), culture);
+                    o => o.IsEquipmentType(weaponType) && !IsRestricted(o), culture);
                 return item;
             }
             else
