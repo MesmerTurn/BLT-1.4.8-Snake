@@ -21,10 +21,32 @@ namespace BLTAdoptAHero
             Shield
         }
 
-        // Read this from the live config instead of caching it. This allows changes made
-        // after RewardHelpers is initialized to take effect without restarting the game.
+        // Read this from the live config instead of caching it once. Caching it in a static
+        // initialiser meant edits made to Restricted Items while the game was running never took
+        // effect, because the field kept whatever the config held at class load.
+        //
+        // Reading the config property on every item would be the other extreme: its getter splits
+        // the setting string and builds a brand new HashSet each time it is touched, and these
+        // filters run across the whole item list for every reward generated. So keep a copy and
+        // rebuild it only when the underlying setting actually changes - live, but not rebuilt
+        // thousands of times per reward.
+        private static string restrictedItemsSource;
+        private static HashSet<string> restrictedItemIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        private static HashSet<string> RestrictedIds()
+        {
+            string source = BLTAdoptAHeroModule.CommonConfig?.RestrictedItems ?? "";
+            if (!string.Equals(source, restrictedItemsSource, StringComparison.Ordinal))
+            {
+                restrictedItemsSource = source;
+                restrictedItemIds = BLTAdoptAHeroModule.CommonConfig.RestrictedItemIds
+                                    ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            }
+            return restrictedItemIds;
+        }
+
         private static bool IsRestricted(ItemObject item)
-            => item != null && BLTAdoptAHeroModule.CommonConfig.RestrictedItemIds.Contains(item.StringId ?? "");
+            => item != null && RestrictedIds().Contains(item.StringId ?? "");
 
         public static (ItemObject item, ItemModifier modifier, EquipmentIndex slot) GenerateRewardType(
             RewardType rewardType, int tier, Hero hero, HeroClassDef heroClass,
