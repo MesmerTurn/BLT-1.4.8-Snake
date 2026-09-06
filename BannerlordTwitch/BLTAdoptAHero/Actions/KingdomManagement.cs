@@ -1568,7 +1568,24 @@ namespace BLTAdoptAHero.Actions
                 return;
             }
 
-            int totalCost = influenceAmount * settings.SponsorGoldPerInfluence;
+            // influenceAmount comes straight from viewer chat input with no upper bound. The old
+            // code multiplied it by SponsorGoldPerInfluence as a plain int - a viewer typing e.g.
+            // 3000000 overflowed Int32 (wrapping to a NEGATIVE totalCost). That negative cost then
+            // sailed straight past the "not enough gold" check (positive gold is never "less than"
+            // a negative number), and the subsequent "-totalCost" gold deduction became a large
+            // POSITIVE gold grant instead - the exact opposite of paying for anything. The king's
+            // cut overflowed the same way, draining gold from the king rather than paying them.
+            // Do the multiplication in long, then reject anything that wouldn't fit safely back
+            // into the int gold/influence values the rest of BLT uses, instead of silently
+            // wrapping.
+            long totalCostLong = (long)influenceAmount * settings.SponsorGoldPerInfluence;
+            if (totalCostLong > int.MaxValue / 2)
+            {
+                onFailure($"That amount is too large - costs {settings.SponsorGoldPerInfluence}{Naming.Gold} per influence, try a smaller number.");
+                return;
+            }
+
+            int totalCost = (int)totalCostLong;
             int heroGold = BLTAdoptAHeroCampaignBehavior.Current.GetHeroGold(adoptedHero);
 
             if (heroGold < totalCost)
