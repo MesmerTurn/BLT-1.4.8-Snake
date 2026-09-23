@@ -319,9 +319,10 @@ namespace BLTAdoptAHero
             return baseFireDamage;
         }
 
-        public override float CalculatePassiveAttackDamage(BasicCharacterObject attackerCharacter, in AttackCollisionData collisionData, float baseDamage)
+        // 1.5.3 passes the whole AttackInformation here instead of just the attacking character.
+        public override float CalculatePassiveAttackDamage(in AttackInformation attackInformation, in AttackCollisionData collisionData, float baseDamage)
         {
-            return previousModel.CalculatePassiveAttackDamage(attackerCharacter, in collisionData, baseDamage);
+            return previousModel.CalculatePassiveAttackDamage(in attackInformation, in collisionData, baseDamage);
         }
 
         public override float CalculateRemainingMomentum(float originalMomentum, in Blow b, in AttackCollisionData collisionData, Agent attacker, Agent victim, in MissionWeapon attackerWeapon, bool isCrushThrough)
