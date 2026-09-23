@@ -43,6 +43,11 @@ namespace BLTAdoptAHero.Models
         public override float BaseSpeed => _previous.BaseSpeed;
         public override float MinimumSpeed => _previous.MinimumSpeed;
 
+        // New in 1.5.3, for ships: how many crew a party is short of. Handed straight to the
+        // model we wrap, like everything else here.
+        public override int GetSkeletalCrewCount(MobileParty mobileParty)
+            => _previous.GetSkeletalCrewCount(mobileParty);
+
         public override ExplainedNumber CalculateBaseSpeed(MobileParty party, bool includeDescriptions = false, int additionalTroopOnFootCount = 0, int additionalTroopOnHorseCount = 0)
         {
             return _previous.CalculateBaseSpeed(party, includeDescriptions, additionalTroopOnFootCount, additionalTroopOnHorseCount);
