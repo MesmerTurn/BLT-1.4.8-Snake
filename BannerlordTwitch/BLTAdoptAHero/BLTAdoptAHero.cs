@@ -198,6 +198,8 @@ namespace BLTAdoptAHero
                     HeroPowerConfig = GlobalHeroPowerConfig.Get();
 
                     var campaignStarter = (CampaignGameStarter)gameStarterObject;
+                    // First, so broken rosters are repaired before anything else walks them.
+                    campaignStarter.AddBehavior(new BLTRosterRepairBehavior());
                     campaignStarter.AddBehavior(new BLTAdoptAHeroCampaignBehavior());
             campaignStarter.AddBehavior(new BLTBannerSanitizerBehavior());
                     campaignStarter.AddBehavior(new BLTTournamentQueueBehavior());

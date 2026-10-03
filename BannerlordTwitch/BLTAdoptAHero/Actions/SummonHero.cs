@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -225,7 +225,7 @@ namespace BLTAdoptAHero
             new("{=gmN3YLPw}Liberty or Death!") { EnemySide = false, General = false },
             new("{=FoDIukJK}Har Har Mahadev!") { EnemySide = false, General = false },
             new("{=SSqdBzkY}Desperta ferro!") { EnemySide = false, General = false },
-            new("{=UHhpIpDU}Alba gu bràth!") { EnemySide = false, General = false },
+            new("{=UHhpIpDU}Alba gu brĂ th!") { EnemySide = false, General = false },
             new("{=lDo1AOCS}Santiago!") { EnemySide = false, General = false },
             new("{=gT95E89y}Huzzah!") { EnemySide = false, General = false },
             new("{=fKKpcZGQ}War... war never changes...") { EnemySide = false, General = false },
@@ -283,8 +283,16 @@ namespace BLTAdoptAHero
             }
 
             // SpawnAgent (as called by this function) crashes if called in MissionMode.Deployment (would be nice to make it work though)
-            if (Mission.Current == null
-                || Mission.Current.Mode is MissionMode.Barter or MissionMode.Conversation or
+            // Mission.Current == null satisfies the outer test, and the inner one then read
+            // Mission.Current.Mode anyway - so this threw a NullReferenceException precisely when
+            // there was no mission. With no mission there is nothing to be summoned into.
+            if (Mission.Current == null)
+            {
+                onFailure("{=TdykIizS}You cannot be summoned now!".Translate());
+                return;
+            }
+
+            if (Mission.Current.Mode is MissionMode.Barter or MissionMode.Conversation or
                     MissionMode.Duel or MissionMode.Replay or MissionMode.CutScene or MissionMode.Stealth)
             {
                 if (Mission.Current.Mode is MissionMode.Stealth && MissionHelpers.InHideOutMission())
@@ -586,8 +594,22 @@ namespace BLTAdoptAHero
                         {
                             if (originalParty?.Party?.MemberRoster != null && originalParty?.Party?.MemberRoster.TotalHealthyCount > 0)
                                 adoptedHero.HitPoints = oldHP;
-                            party.AddMember(adoptedHero.CharacterObject, -1);
-                            originalParty?.Party?.MemberRoster.AddToCounts(adoptedHero.CharacterObject, 1, insertAtFront: wasLeader);
+                            // Same trap as the retinue removal: taking one off a party that does
+                            // not have the hero drives the count below zero and corrupts the
+                            // roster. And a hero belongs in a member roster exactly once - adding
+                            // one who is already there leaves two entries for the same character,
+                            // which the game's own spawn code does not expect.
+                            if (party?.MemberRoster?.GetTroopCount(adoptedHero.CharacterObject) > 0)
+                            {
+                                party.AddMember(adoptedHero.CharacterObject, -1);
+                            }
+
+                            var returnRoster = originalParty?.Party?.MemberRoster;
+                            if (returnRoster != null
+                                && returnRoster.GetTroopCount(adoptedHero.CharacterObject) <= 0)
+                            {
+                                returnRoster.AddToCounts(adoptedHero.CharacterObject, 1, insertAtFront: wasLeader);
+                            }
                             // Make sure to reassign the hero as party leader if they were previously
                             if (wasLeader)
                             {
@@ -921,8 +943,22 @@ namespace BLTAdoptAHero
                         {
                             if (originalParty?.Party?.MemberRoster != null && originalParty?.Party?.MemberRoster.TotalHealthyCount > 0)
                                 adoptedHero.HitPoints = oldHP;
-                            party.AddMember(adoptedHero.CharacterObject, -1);
-                            originalParty?.Party?.MemberRoster.AddToCounts(adoptedHero.CharacterObject, 1, insertAtFront: wasLeader);
+                            // Same trap as the retinue removal: taking one off a party that does
+                            // not have the hero drives the count below zero and corrupts the
+                            // roster. And a hero belongs in a member roster exactly once - adding
+                            // one who is already there leaves two entries for the same character,
+                            // which the game's own spawn code does not expect.
+                            if (party?.MemberRoster?.GetTroopCount(adoptedHero.CharacterObject) > 0)
+                            {
+                                party.AddMember(adoptedHero.CharacterObject, -1);
+                            }
+
+                            var returnRoster = originalParty?.Party?.MemberRoster;
+                            if (returnRoster != null
+                                && returnRoster.GetTroopCount(adoptedHero.CharacterObject) <= 0)
+                            {
+                                returnRoster.AddToCounts(adoptedHero.CharacterObject, 1, insertAtFront: wasLeader);
+                            }
                             // Make sure to reassign the hero as party leader if they were previously
                             if (wasLeader)
                             {
