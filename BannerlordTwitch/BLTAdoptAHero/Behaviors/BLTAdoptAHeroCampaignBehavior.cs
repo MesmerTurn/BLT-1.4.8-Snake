@@ -620,6 +620,25 @@ namespace BLTAdoptAHero
             return hd.Gold;
         }
 
+        /// <summary>
+        /// Returns gold that was previously spent, and undoes the spending record with it.
+        ///
+        /// Handing the gold back through ChangeHeroGold left SpentGold standing, so a viewer could
+        /// fund party training and cancel it over and over: the gold came back every time while the
+        /// spent total only ever grew. That total is not cosmetic - InheritGold pays an heir from
+        /// (SpentGold + Gold), so the loop inflated inheritances for free.
+        ///
+        /// Fix taken from DarkTiger512's BLT fork.
+        /// </summary>
+        public int RefundHeroGold(Hero hero, int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            var hd = GetHeroData(hero);
+            hd.Gold = (int)Math.Min(int.MaxValue, (long)hd.Gold + amount);
+            hd.SpentGold = (int)Math.Max(0L, (long)hd.SpentGold - amount);
+            return hd.Gold;
+        }
+
         public int InheritGold(Hero inheritor, float amount)
         {
             var ancestors = GetAncestors(inheritor.FirstName.ToString());

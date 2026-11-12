@@ -679,7 +679,7 @@ namespace BLTAdoptAHero.Actions
             {
                 int refund = TrainingBehavior.Current.CancelFund(h);
                 if (refund <= 0) { onFailure("No training fund to cancel"); return; }
-                BLTAdoptAHeroCampaignBehavior.Current.ChangeHeroGold(h, refund, false);
+                BLTAdoptAHeroCampaignBehavior.Current.RefundHeroGold(h, refund);
                 onSuccess($"Training cancelled - refunded {refund}{Naming.Gold}");
                 return;
             }

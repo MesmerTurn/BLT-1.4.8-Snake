@@ -240,6 +240,19 @@ namespace BLTAdoptAHero.Actions
                     // Ammo typically doesn't get equipped via this system
                 var weaponClass = item.WeaponComponent.PrimaryWeapon.WeaponClass;
 
+                // Polearms are checked against every mode the item actually has, not just the
+                // primary one. A weapon's primary mode does not describe everything it can do -
+                // plenty of glaives and lances carry their polearm mode as a secondary one, and
+                // judging by the primary alone refused to equip them even though the slot fit.
+                // Everything else keeps using the primary mode, as before.
+                bool AnyMode(params WeaponClass[] classes)
+                    => item.Weapons != null && item.Weapons.Any(w => classes.Contains(w.WeaponClass));
+
+                if (slotType is EquipmentType.OneHandedLance or EquipmentType.OneHandedGlaive)
+                    return AnyMode(WeaponClass.OneHandedPolearm);
+                if (slotType is EquipmentType.TwoHandedLance or EquipmentType.TwoHandedGlaive)
+                    return AnyMode(WeaponClass.TwoHandedPolearm, WeaponClass.LowGripPolearm);
+
                 return weaponClass switch
                 {
                     WeaponClass.Dagger => slotType == EquipmentType.Dagger,
