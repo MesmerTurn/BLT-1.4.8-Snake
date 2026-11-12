@@ -95,11 +95,14 @@ namespace BLTAdoptAHero.Models
             _previous = previous;
         }
 
+        // 1.5.7 added isCurrentlyAtSea to this model (War Sails). We only add our own bonuses on
+        // top of whatever the previous model works out, so the flag is simply passed through.
         public override ExplainedNumber GetPartyMemberSizeLimit(
     PartyBase party,
+    bool isCurrentlyAtSea,
     bool includeDescriptions = true)
         {
-            var result = _previous.GetPartyMemberSizeLimit(party, includeDescriptions);
+            var result = _previous.GetPartyMemberSizeLimit(party, isCurrentlyAtSea, includeDescriptions);
 
             if (UpgradeBehavior.Current == null) return result;
 
